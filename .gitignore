@@ -1,0 +1,14 @@
+
+
+  
+
+*.py[cod]
+saved/
+.vscode/
+*.ipynb_checkpoints/
+
+dist
+*.egg-info
+
+wip
+dump
