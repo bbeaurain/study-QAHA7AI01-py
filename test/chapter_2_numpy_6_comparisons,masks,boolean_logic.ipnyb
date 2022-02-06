@@ -1,0 +1,716 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "ff34093f-4b82-457d-960e-25a87190566f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Example: Counting Rainy Days"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "4881a6c6-e3da-422d-ba7e-0070d2f598e3",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(365,)"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "# use Pandas to extract rainfall inches as a NumPy array\n",
+    "rainfall = pd.read_csv('Seattle2014.csv')['PRCP'].values\n",
+    "inches = rainfall / 254 # 1/10mm -> inches\n",
+    "inches.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "4a212a31-85e6-4b56-9465-c31a2f0c20f3",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "%matplotlib inline\n",
+    "import matplotlib.pyplot as plt\n",
+    "import seaborn; seaborn.set() # set plot styles"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "4eecc849-db1e-4473-b63d-865a9a9267bb",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "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\n",
+      "text/plain": [
+       "<Figure size 432x288 with 1 Axes>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "plt.hist(inches, 40);"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "804d0626-9e69-4e83-b231-08a07c5b963d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Comparison Operators as ufuncs"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "c0647433-3203-494a-9d9a-ff27c6f20a3e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "x = np.array([1, 2, 3, 4, 5])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "e27e56f4-b25f-42ff-b7ac-06bf7af9b645",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([ True,  True, False, False, False])"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x < 3 # less than"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "6c948f5c-d8c1-4fef-be7b-e6e3a039f965",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([False, False, False,  True,  True])"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x > 3 # greater than"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "cd88b4c8-5982-4c27-861d-885ea5c7bdfa",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([ True,  True,  True, False, False])"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x <= 3 # less than or equal"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "72c79d38-f15c-4468-b740-cb5f80a29eb2",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([False, False,  True,  True,  True])"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x >= 3 # greater than or equal"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "25cb8ade-39b2-4553-82ad-ab8a2847792b",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([ True,  True, False,  True,  True])"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x != 3 # not equal"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "939aec95-9833-4e72-917a-3777b82e037d",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([False, False,  True, False, False])"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x == 3 # equal"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "abea489a-611e-4356-9a33-a52324423699",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([False,  True, False, False, False])"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "(2 * x) == (x ** 2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "e2a91c9c-2d7c-4ef6-b4de-176ef1157c39",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[5, 0, 3, 3],\n",
+       "       [7, 9, 3, 5],\n",
+       "       [2, 4, 7, 6]])"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "rng = np.random.RandomState(0)\n",
+    "x = rng.randint(10, size=(3, 4))\n",
+    "x"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "a21721f8-e176-404f-bddd-af2f86e2c644",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[ True,  True,  True,  True],\n",
+       "       [False, False,  True,  True],\n",
+       "       [ True,  True, False, False]])"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x<6"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "c9bb5302-19bf-49b8-897c-178142c3d951",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Working with Boolean Arrays"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "3a4be6c5-d6c0-425d-bad3-f24ed97720d5",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[5 0 3 3]\n",
+      " [7 9 3 5]\n",
+      " [2 4 7 6]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(x)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "8f227616-71bc-4b80-9986-30350164304d",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "8"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# how many values less than 6?\n",
+    "np.count_nonzero(x < 6)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "3dd49649-d54a-49c6-a060-7c2a2a078162",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "8"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.sum(x < 6)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "f26c8f4d-3733-427c-8f9c-a8bbc466e9b5",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([4, 2, 2])"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# how many values less than 6 in each row?\n",
+    "np.sum(x < 6, axis=1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "d3f5cba1-3c63-4b66-a83b-7d69dfd71875",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "True"
+      ]
+     },
+     "execution_count": 21,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# are there any values greater than 8?\n",
+    "np.any(x > 8)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "b6f79380-f761-4c47-a4bd-69a4ac3c2d6c",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "False"
+      ]
+     },
+     "execution_count": 22,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# are there any values less than zero?\n",
+    "np.any(x < 0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "92cd1451-aff9-45cd-b455-85e9f5f83404",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "True"
+      ]
+     },
+     "execution_count": 23,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# are all values less than 10?\n",
+    "np.all(x < 10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "a7d6e170-3fd8-4807-ac5d-ca0033abba6f",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "False"
+      ]
+     },
+     "execution_count": 24,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# are all values equal to 6?\n",
+    "np.all(x == 6)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "86c30a54-d3a5-4292-a952-331640127a25",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([ True, False,  True])"
+      ]
+     },
+     "execution_count": 25,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# are all values in each row less than 8?\n",
+    "np.all(x < 8, axis=1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "id": "dde0334b-6dd8-4e0d-bcca-333574ecb83f",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "29"
+      ]
+     },
+     "execution_count": 26,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.sum((inches > 0.5) & (inches < 1))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "id": "c1885d99-8653-497b-bc32-d52cd0d23c0d",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "29"
+      ]
+     },
+     "execution_count": 27,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.sum(~( (inches <= 0.5) | (inches >= 1) ))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "id": "a85e1e1e-6c26-4a86-b7dc-ea532066b068",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Number days without rain:  215\n",
+      "Number days with rain:  150\n",
+      "Days with more than 0.5 inches: 37\n",
+      "Rainy days with < 0.1 inches : 75\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(\"Number days without rain: \", np.sum(inches == 0))\n",
+    "print(\"Number days with rain: \", np.sum(inches != 0))\n",
+    "print(\"Days with more than 0.5 inches:\", np.sum(inches > 0.5))\n",
+    "print(\"Rainy days with < 0.1 inches :\", np.sum((inches > 0) &\n",
+    "(inches < 0.2)))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "id": "3e085e8d-ee67-4d65-a537-6273aba437f6",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Boolean Arrays as Masks"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "id": "b55fca3d-f0bc-4141-99fc-8e4950dc4c1d",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[5, 0, 3, 3],\n",
+       "       [7, 9, 3, 5],\n",
+       "       [2, 4, 7, 6]])"
+      ]
+     },
+     "execution_count": 30,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "id": "a6651bc2-2cfd-45b3-9dcb-61e13c838af6",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[False,  True,  True,  True],\n",
+       "       [False, False,  True, False],\n",
+       "       [ True,  True, False, False]])"
+      ]
+     },
+     "execution_count": 33,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x<5"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "id": "8fb47d94-cd5b-4eb9-913c-076471986f8e",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([0, 3, 3, 3, 2, 4])"
+      ]
+     },
+     "execution_count": 34,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x[x<5]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "id": "9d05a145-bd06-4d2b-bb01-b365f4b08e37",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# construct a mask of all rainy days\n",
+    "rainy = (inches > 0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "id": "42dca37d-0b27-4a4e-bddc-e85ea3a04e32",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# construct a mask of all summer days (June 21st is the 172nd day)\n",
+    "summer = (np.arange(365) - 172 < 90) & (np.arange(365) - 172 > 0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "id": "1bbf4c90-0fcc-4534-8589-e2ece36f0929",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Median precip on rainy days in 2014 (inches):  0.19488188976377951\n",
+      "Median precip on summer days in 2014 (inches):  0.0\n",
+      "Maximum precip on summer days in 2014 (inches):  0.8503937007874016\n",
+      "Median precip on non-summer rainy days (inches): 0.20078740157480315\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(\"Median precip on rainy days in 2014 (inches): \",\n",
+    "np.median(inches[rainy]))\n",
+    "print(\"Median precip on summer days in 2014 (inches): \",\n",
+    "np.median(inches[summer]))\n",
+    "print(\"Maximum precip on summer days in 2014 (inches): \",\n",
+    "np.max(inches[summer]))\n",
+    "print(\"Median precip on non-summer rainy days (inches):\",\n",
+    "np.median(inches[rainy & ~summer]))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c4431069-ed21-4f76-bfad-3f5321f62664",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
