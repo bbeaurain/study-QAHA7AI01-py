@@ -1,7 +1,7 @@
 # Quick sheet
 
 ``` python
-# Data types
+#Data types
 np.array
 np.zeros
 np.ones
@@ -40,6 +40,25 @@ x[start:stop:step]
 .add.accumulate()
 .multiply.accumulate()
 .multiply.outer()
+
+#Aggregations
+sum()
+np.sum()
+np.min() 
+np.max(L)
+.min(axis=0) 
+.max(axix=1)
+
+#Broadcasting
+
+#Masking
+==
+!=
+<
+<=
+>
+>=
+
 ```
 
 # Details
@@ -262,11 +281,57 @@ Operator|Equivalent ufunc|Description
 
 ## Aggregations: Min, Max, and everything in between
 
+### Summing the values in an array
+
+``` python
+sum(L) #sum elements of L in Python
+np.sum(L) #sum elements of L in numPy
+
+np.min(L) #min
+np.max(L) #max
+L.min(axis=0) #min for each column
+L.max(axix=1) #max for each row
+```
+Function Name|NaN-safe Version|Description
+---|---|---
+np.sum|np.nansum|Compute sum of elements
+np.prod|np.nanprod|Compute product of elements
+np.mean|np.nanmean|Compute median of elements
+np.std|np.nanstd|Compute standard deviation
+np.var|np.nanvar|Compute variance
+np.min|np.nanmin|Find minimum value
+np.max|np.nanmax|Find maximum value
+np.argmin|np.nanargmin|Find index of minimum value
+np.argmax|np.nanargmax|Find index of maximum value
+np.median|np.nanmedian|Compute median of elements
+np.percentile|np.nanpercentile|Compute rank-based statistics of elements
+np.any|N/A|Evaluate whether any elements are true
+np.all|N/A|Evaluate whether all elements are true
+
 ## Computation on Arrays: Broadcasting
+
+### Concept
+
+Broadcasting allows binary operations to be performed on arrays of different sizes.
+
+* **Rule 1:** If the two arrays differ in their number of dimensions, the shape of the one with fewer dimensions is padded with ones on its leading (left) side.
+* **Rule 2:** If the shape of the two arrays does not match in any dimension, the array with shape equal to 1 in that dimension is stretched to match the other shape.
+* **Rule 3:** If in any dimension the sizes disagree and neither is equal to 1, an error is raised.
+
+### Applications
+* Center an array
+* Plotting a two-dimensional function
 
 ## Comparisons, Masks and Boolean Logic
 
 ``` python
+x = np.array([1, 2, 3, 4, 5])
+
+## Are the values lower than 3
+x < 3 # less than
+    #Out[5]: array([ True, True, False, False, False], dtype=bool)
+    #Same with >, <=, >=, !=, ==
+
 ## how many values less than 6?
 np.count_nonzero(x < 6)
 np.sum(x < 6)
